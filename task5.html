@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Weather App</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+    font-family:"Segoe UI", sans-serif;
+}
+
+body{
+    min-height:100vh;
+    background:linear-gradient(135deg,#0f172a,#020617);
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    color:#fff;
+}
+
+.weather-app{
+    width:360px;
+    background:rgba(255,255,255,0.12);
+    backdrop-filter:blur(14px);
+    border-radius:20px;
+    padding:22px;
+    text-align:center;
+    box-shadow:0 15px 35px rgba(0,0,0,0.45);
+}
+
+.weather-app h2{
+    margin-bottom:15px;
+    color:#c084fc;
+}
+
+/* Search */
+.search-box{
+    display:flex;
+    gap:8px;
+    margin-bottom:15px;
+}
+
+.search-box input{
+    flex:1;
+    padding:9px 12px;
+    border:none;
+    border-radius:10px;
+    outline:none;
+}
+
+.search-box button{
+    padding:9px 14px;
+    border:none;
+    border-radius:10px;
+    background:#7c3aed;
+    color:#fff;
+    cursor:pointer;
+}
+
+/* Day Temp Section */
+.day-temp-section{
+    margin:18px 0;
+    padding:14px;
+    background:rgba(255,255,255,0.18);
+    border-radius:14px;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+}
+
+.day-temp-section div{
+    flex:1;
+    text-align:center;
+}
+
+.day{
+    font-size:15px;
+    font-weight:600;
+}
+
+.celsius{
+    font-size:18px;
+    font-weight:700;
+    color:#e9d5ff;
+}
+
+.temperature{
+    font-size:30px;
+    font-weight:700;
+}
+
+/* Weather Info */
+.weather-icon img{
+    width:90px;
+}
+
+.desc{
+    text-transform:capitalize;
+    margin-bottom:6px;
+}
+
+.details{
+    display:flex;
+    justify-content:space-between;
+    margin-top:10px;
+    font-size:14px;
+}
+
+/* Forecast */
+.forecast{
+    margin-top:18px;
+    display:flex;
+    justify-content:space-between;
+    gap:8px;
+}
+
+.forecast-day{
+    flex:1;
+    background:rgba(255,255,255,0.15);
+    border-radius:12px;
+    padding:8px 4px;
+    font-size:13px;
+}
+
+.forecast-day span{
+    display:block;
+    margin-top:4px;
+    font-weight:600;
+    color:#e9d5ff;
+}
+
+/* Button */
+.location-btn{
+    margin-top:14px;
+    padding:10px;
+    width:100%;
+    border:none;
+    border-radius:12px;
+    background:linear-gradient(135deg,#c084fc,#7c3aed);
+    color:#020617;
+    cursor:pointer;
+    font-size:15px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="weather-app">
+    <h2>Weather App</h2>
+
+    <div class="search-box">
+        <input type="text" id="cityInput" placeholder="Enter city name">
+        <button onclick="getWeatherByCity()">Search</button>
+    </div>
+
+    <div class="day-temp-section">
+        <div class="day" id="dayName">Day</div>
+        <div class="celsius">°C</div>
+        <div class="temperature" id="dayTemp">--</div>
+    </div>
+
+    <div class="weather-icon">
+        <img id="icon" src="" alt="">
+    </div>
+
+    <div class="desc" id="description">---</div>
+    <div id="city">---</div>
+
+    <div class="details">
+        <div>💧 <span id="humidity">--%</span></div>
+        <div>💨 <span id="wind">-- km/h</span></div>
+    </div>
+
+    <!-- FORECAST -->
+    <div class="forecast" id="forecast"></div>
+
+    <button class="location-btn" onclick="getWeatherByLocation()">
+        Use Current Location
+    </button>
+</div>
+
+<script>
+const apiKey = "83a5616f3f4cc7ff67c4a98f741c78ed";
+
+/* Update Day + Temp */
+function updateDayTemp(temp){
+    const days=["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+    const today=new Date();
+    document.getElementById("dayName").innerText=days[today.getDay()];
+    document.getElementById("dayTemp").innerText=Math.round(temp);
+}
+
+/* Update UI */
+function updateUI(data){
+    updateDayTemp(data.main.temp);
+
+    document.getElementById("description").innerText=data.weather[0].description;
+    document.getElementById("city").innerText=data.name+", "+data.sys.country;
+    document.getElementById("humidity").innerText=data.main.humidity+"%";
+    document.getElementById("wind").innerText=(data.wind.speed*3.6).toFixed(1)+" km/h";
+    document.getElementById("icon").src=
+        "https://openweathermap.org/img/wn/"+data.weather[0].icon+"@2x.png";
+
+    getForecast(data.coord.lat, data.coord.lon);
+}
+
+/* Forecast */
+function getForecast(lat, lon){
+    fetch(`https://api.openweathermap.org/data/2.5/forecast?lat=${lat}&lon=${lon}&units=metric&appid=${apiKey}`)
+        .then(res=>res.json())
+        .then(data=>{
+            const forecastDiv=document.getElementById("forecast");
+            forecastDiv.innerHTML="";
+            const days=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+
+            for(let i=8;i<=40;i+=8){
+                const d=new Date(data.list[i].dt*1000);
+                forecastDiv.innerHTML+=`
+                    <div class="forecast-day">
+                        ${days[d.getDay()]}
+                        <span>${Math.round(data.list[i].main.temp)}°</span>
+                    </div>`;
+            }
+        });
+}
+
+/* Search by City */
+function getWeatherByCity(){
+    const city=document.getElementById("cityInput").value;
+    if(!city) return alert("Please enter a city name");
+
+    fetch(`https://api.openweathermap.org/data/2.5/weather?q=${city}&units=metric&appid=${apiKey}`)
+        .then(res=>res.json())
+        .then(data=>{
+            if(data.cod!==200){
+                alert("City not found");
+                return;
+            }
+            updateUI(data);
+        });
+}
+
+/* Location Weather */
+function getWeatherByLocation(){
+    if(navigator.geolocation){
+        navigator.geolocation.getCurrentPosition(pos=>{
+            const lat=pos.coords.latitude;
+            const lon=pos.coords.longitude;
+
+            fetch(`https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&units=metric&appid=${apiKey}`)
+                .then(res=>res.json())
+                .then(data=>updateUI(data));
+        },()=>alert("Location access denied"));
+    }
+}
+</script>
+
+</body>
+</html>
